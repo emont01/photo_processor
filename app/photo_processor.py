@@ -39,13 +39,8 @@ class PathWalker:
             self.processFiles(self.dir, filenames)
         else:
             for root, dirnames, filenames in walkFiles(self.dir):
-                print('{0}, {1}, {2}'.format(root, dirnames, filenames))
                 logging.debug('checking dir path: {0}'.format(root))
                 self.processFiles(root, filenames)
-        #if recursive == True:
-        #    for dirname in dirnames:
-        #        pass
-        #        self.walk(dirname, recursive)
     
     def processFiles(self, root, filenames):
         logging.debug('processing files in {0}: {1}'.format(root, filenames))
