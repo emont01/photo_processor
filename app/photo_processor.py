@@ -2,7 +2,7 @@
 
 """Mail list cleaner
 Usage:
-  photo_processor.py [-l | --to-lower] [-o | --optimize] [-r | --recursive] (DIR ...)
+  photo_processor.py [-lor] (DIR ...)
   photo_processor.py (-h | --help)
   photo_processor.py (-v | --version)
 
@@ -10,10 +10,12 @@ Options:
   -h --help       show this screen.
   -v --version    show version.
   -l --to-lower   change all names to lower case
+  -o --optimize   use jpegoptim to optimize JPEG images
+  -r --recursive  recursively process all files the dir tree
 """
 import logging
-from os import rename, walk as walkFiles
-from os.path import join as pathJoin, splitext
+from os import rename, walk as walkFiles, listdir
+from os.path import join as pathJoin, splitext, isfile
 from docopt import docopt
 
 def renameFile(root, oldName, newName):
@@ -31,15 +33,22 @@ class PathWalker:
     
     def walk(self, recursive = False):
         logging.info('walking dir {0}'.format(self.dir))
-        for root, dirnames, filenames in walkFiles(self.dir):
-            logging.debug('checking dir path: {0}'.format(root))
-            self.processFiles(root, filenames)
         logging.debug('recursive option is: {0}'.format(recursive))
-        if recursive:
-            for dirname in dirnames:
-                self.walk(dirname, recursive)
+        if recursive == False:
+            filenames = [f for f in listdir(self.dir) if isfile(f)]
+            self.processFiles(self.dir, filenames)
+        else:
+            for root, dirnames, filenames in walkFiles(self.dir):
+                print('{0}, {1}, {2}'.format(root, dirnames, filenames))
+                logging.debug('checking dir path: {0}'.format(root))
+                self.processFiles(root, filenames)
+        #if recursive == True:
+        #    for dirname in dirnames:
+        #        pass
+        #        self.walk(dirname, recursive)
     
     def processFiles(self, root, filenames):
+        logging.debug('processing files in {0}: {1}'.format(root, filenames))
         for filename in filenames:
             base, ext = splitext(filename.lower())
             if ext != '.jpg' and ext != '.jpeg':
@@ -101,13 +110,12 @@ if __name__ == '__main__':
     logging.info('Started')
 
     arguments = docopt(__doc__, version='Images processor 1.0')
-
     fileActions = FileActionCollection()
     if arguments['--to-lower']:
         fileActions.addAction(LowerCaseAction())
     if arguments['--optimize']:
-        fileActions.addAction(ExtNormalizerAction())
-    fileActions.addAction(JpegOptimAction())
+        fileActions.addAction(JpegOptimAction())
+    fileActions.addAction(ExtNormalizerAction())
 
     for dir in arguments['DIR']:
         walker = PathWalker(dir, fileActions)
